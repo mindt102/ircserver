@@ -1,0 +1,157 @@
+{
+    "Servers": ["Client", "Encrypt", "IRC", "Auth"],
+    "Protocols": {
+        "Client / IRC and Encrypt": 
+        { 
+            "Encrypt request (Encrypt -> Client)": 
+            {
+                "receiver": 0,
+                "method": "ENCRYPT",
+                "message": "{ 'method': 'LOGIN', 'username': admin, 'password': admin }"
+            },
+            
+            "Encrypt response (Encrypt -> Client)":
+            {
+                "receiver": 0,
+                "method": "ENCRYPT",
+                "message": "encrypted( {'method': 'LOGIN', 'username': 'admin', 'password': 'admin'} )"
+            },
+            
+            "Decrypt request (Encrypt -> Client)": 
+            {
+                "receiver": 0,
+                "method": "DECRYPT",
+                "message": "encrypted( {'method': 'MESSAGE', 'sender_username': 'admin', 'message': 'random text'} )"
+            },
+            
+            "Decrypt response (Ecrypt -> Client)": 
+            {
+                "receiver": 0,
+                "method": "DECRYPT",
+                "message": "{'method': 'MESSAGE', 'sender_username': 'admin', 'message': 'random text'}"
+            }
+        },
+
+        "Client and IRC { 'method': 'MESSAGE', 'message':'encrypted_message' }": 
+        {
+            "Broadcast": 
+            {
+                "method": "BROADCAST",
+                "message": "encrypted message"
+            },
+
+            "Unicast": 
+            {
+                "method": "UNICAST",
+                "message": "encrypted message"
+            },
+
+            "Login request (Client -> IRC) (encrypted)":
+            {
+                "method": "LOGIN",
+                "username": "admin",
+                "password": "admin"
+            },
+ 
+            "Login response (IRC -> Client) (encrypted)": 
+            [
+                {
+                    "method": "LOGIN",
+                    "status": "SUCCESS", 
+                    "username": "admin"
+                },
+                {
+                    "method": "LOGIN",
+                    "status": "FAIL", 
+                    "error": "Error message"
+                }
+            ],
+
+            "Register request (Client -> IRC) (encrypted)":
+            {
+                "method": "REGISTER",
+                "username": "admin",
+                "password": "admin"
+            },
+
+            "Register response (IRC -> Client) (encrypted)": 
+            [
+                {
+                    "method": "LOGIN",
+                    "status": "SUCCESS", 
+                    "username": "admin"
+                },
+                {
+                    "method": "LOGIN",
+                    "status": "FAIL", 
+                    "error": "Error message"
+                }
+            ],
+
+            "Message request (Client -> IRC) (encrypted)": 
+            {
+                "method": "MESSAGE",
+                "username": "username",
+                "message": "random text"
+            },
+
+            "Message broadcast (IRC -> Clients) (encrypted)": 
+            {
+                "method": "MESSAGE",
+                "username": "username",
+                "message": "random text"
+            }
+        },
+
+        "IRC and Auth":
+        {
+            "Login request (IRC -> Auth)":
+            {
+                "receiver": 1,
+                "method": "LOGIN",
+                "username": "admin",
+                "password": "admin"
+            },
+
+            "Login response (Auth -> IRC)": 
+            [
+                {
+                    "receiver": 1,
+                    "method": "LOGIN",
+                    "status": "SUCCESS", 
+                    "username": "admin"
+                },
+                {
+                    "receiver": 1,
+                    "method": "LOGIN",
+                    "status": "FAIL", 
+                    "error": "Error message"
+                }
+            ],
+
+            "Register request (IRC -> Auth)":
+            {
+                "receiver": 1,
+                "method": "REGISTER",
+                "username": "admin",
+                "password": "admin"
+            },
+
+            "Register response (Auth -> IRC)": 
+            [
+                {
+                    "receiver": 1,
+                    "method": "REGISTER",
+                    "status": "SUCCESS", 
+                    "username": "admin"
+                },
+                {
+                    "client_fd": 1,
+                    "method": "REGISTER",
+                    "status": "FAIL", 
+                    "error": "Error message"
+                }
+            ]
+        }
+    }
+}
