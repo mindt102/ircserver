@@ -3,7 +3,7 @@
     "Protocols": {
         "Client / IRC and Encrypt": 
         { 
-            "Encrypt request (Encrypt -> Client)": 
+            "Encrypt request (Client -> Encrypt)": 
             {
                 "receiver": 0,
                 "method": "ENCRYPT",
@@ -17,7 +17,7 @@
                 "message": "encrypted( {'method': 'LOGIN', 'username': 'admin', 'password': 'admin'} )"
             },
             
-            "Decrypt request (Encrypt -> Client)": 
+            "Decrypt request (Client -> Encrypt)": 
             {
                 "receiver": 0,
                 "method": "DECRYPT",
@@ -40,7 +40,7 @@
                 "message": "encrypted message"
             },
 
-            "Unicast": 
+            "Unicast":
             {
                 "method": "UNICAST",
                 "message": "encrypted message"
@@ -77,12 +77,12 @@
             "Register response (IRC -> Client) (encrypted)": 
             [
                 {
-                    "method": "LOGIN",
+                    "method": "REGISTER",
                     "status": "SUCCESS", 
                     "username": "admin"
                 },
                 {
-                    "method": "LOGIN",
+                    "method": "REGISTER",
                     "status": "FAIL", 
                     "error": "Error message"
                 }
