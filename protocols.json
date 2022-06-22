@@ -146,7 +146,7 @@
                     "username": "admin"
                 },
                 {
-                    "client_fd": 1,
+                    "receiver": 1,
                     "method": "REGISTER",
                     "status": "FAIL", 
                     "error": "Error message"
