@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include "shared_func.h"
+#include "json.h"
 
 void handle_request(char *request, int senderfd)
 {

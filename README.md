@@ -1,7 +1,8 @@
 # Quick Start
 0. Compile all servers and client
 ```
-gcc irc.server.c -o irc.server && gcc enc.server.c -o enc.server && gcc client.c -o client
+chmod +x compile_all.sh
+./compile_all.sh
 ```
 1. Start the encryption server
 ```

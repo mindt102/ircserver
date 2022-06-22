@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include "shared_func.h"
+#include "json.h"
 
 void handle_send_request(int encryptfd, char *message, char *clientid)
 {

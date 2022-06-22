@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include "shared_func.h"
+#include "json.h"
 
 void broadcast(char *message, int *clientfds, int encryptfd, int authfd, int senderfd)
 {
