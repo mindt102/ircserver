@@ -36,12 +36,12 @@ void handle_authentication_response(char *payload, int encryptfd)
     }
     */
 
-    // TODO: Create the payload and send to the encryption server to ENCRYPT
+    //HaTrang: TODO: Create the payload and send to the encryption server to ENCRYPT
 }
 
 void handle_unicast_request(char *payload, int encryptfd, int senderfd)
 {
-    // TODO: Create the payload and send to the encryption server to DECRYPT
+    //HaTrang TODO: Create the payload and send to the encryption server to DECRYPT
 }
 
 void handle_client_request(char *payload, int encryptfd, int clientfd)
