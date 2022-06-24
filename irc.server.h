@@ -24,11 +24,24 @@ void broadcast(char *message, int *clientfds, int encryptfd, int authfd, int sen
     }
 }
 
-void handle_authentication()
+void handle_authentication_response(char *payload, int encryptfd)
 {
     /*
-    This function handle the responses from the authentication server and send back to clients
+    This function handle the responses from the authentication server and send to encryption server
+    Incoming payload structure:
+    {
+        "method": "LOGIN" or "REGISTER",
+        "status": "SUCCESS" or "FAIL",
+        "username" or "error": "admin" or "Incorrect username"
+    }
     */
+
+    // TODO: Create the payload and send to the encryption server to ENCRYPT
+}
+
+void handle_unicast_request(char *payload, int encryptfd, int senderfd)
+{
+    // TODO: Create the payload and send to the encryption server to DECRYPT
 }
 
 void handle_client_request(char *payload, int encryptfd, int clientfd)
@@ -76,7 +89,10 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     else if (strcmp(method, "ENCRYPT") == 0)
     {
         // The encrypted payload of the login or register result
-        // TODO: Create the payload and send to the receiver
+        // TODO: Create the payload and send to the receiver (i.e. the client)
+        // 1. Extract the encrypted message
+        // 2. Extract the receiver
+        // 3. Create the payload and send the encrypted message to the receiver
     }
 }
 
@@ -91,6 +107,7 @@ void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int
         + BROADCAST => Broadcast this message to all other clients
         + UNICAST => Send this message to encryption server to decrypt
     */
+
     // printf("Received payload from %d: %s", senderfd, payload);
     JsonNode *received_payload = json_decode(payload);
     char *method = json_find_member(received_payload, "method")->string_;
@@ -98,6 +115,7 @@ void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int
     if (senderfd == authfd)
     {
         /* Payload comes from authentication server */
+        handle_authentication_response(payload, encryptfd);
     }
     else if (senderfd == encryptfd)
     {
@@ -114,8 +132,8 @@ void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int
         }
         else if (strcmp(method, "UNICAST") == 0)
         {
-            // TODO: Create the payload and send a decrypt request to the decryption server
             char *encrypted_message = json_find_member(received_payload, "message")->string_;
+            handle_unicast_request(encrypted_message, encryptfd, senderfd);
             // printf("Encrypted message: %s\n", encrypted_message);
         }
     }
