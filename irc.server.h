@@ -63,7 +63,7 @@ void handle_client_request(char *payload, int encryptfd, int clientfd)
     char *method = json_find_member(payload_json, "method")->string_;
     char *message = json_find_member(payload_json, "message")->string_;
     // printf("Decrypted message: %s\n", message);
-    // TODO: Creat the payload and send to authentication server
+    // Tran Quy Duong: Creat the payload and send to authentication server
 }
 
 void handle_encryption_response(char *payload, int *clientfds, int encryptfd, int authfd)
