@@ -36,12 +36,40 @@ void handle_authentication_response(char *payload, int encryptfd)
     }
     */
 
-    // TODO: Create the payload and send to the encryption server to ENCRYPT
+    //HaTrang: TODO: Create the payload and send to the encryption server to ENCRYPT
+    JsonNode *payload_json = json_decode(payload);
+    int receiver = json_find_member(payload_json, "receiver")->number_;
+    char *method = json_find_member(payload_json, "method")->string_;
+    char *status = json_find_member(payload_json, "status")->string_;
+
+    JsonNode *message_json = json_mkobject();
+    JsonNode *method_json = json_mkstring(method);
+    JsonNode *status_json = json_mkstring(status);
+    json_append_member(message_json, "method", method_json);
+    json_append_member(message_json, "status", status_json);
+
+    if (strcmp(status,"FAIL") == 0){
+        char *error = json_find_member(payload_json,"error")->string_;
+        JsonNode *error_json = json_mkstring(error);
+        json_append_member(message_json, "error", error_json);
+    }
+    else if (strcmp(status,"SUCCESS") == 0){
+        char *username = json_find_member(payload_json,"username")->string_;
+        JsonNode *username_json = json_mkstring(username);
+        json_append_member(message_json, "username", username_json);
+    }
+    char *message = json_encode(message_json);
+    
+    request_encryption_server("ENCRYPT", message, encryptfd, receiver);
+    
 }
 
 void handle_unicast_request(char *payload, int encryptfd, int senderfd)
 {
-    // TODO: Create the payload and send to the encryption server to DECRYPT
+    //HaTrang TODO: call function to DECRYPT
+    JsonNode *payload_json = json_decode(payload);
+    char *message = json_find_member(payload_json, "message")->string_;
+    request_encryption_server("DECRYPT", message, encryptfd, senderfd);
 }
 
 void handle_client_request(char *payload, int authfd, int clientfd)
