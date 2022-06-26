@@ -163,7 +163,7 @@ void handle_encryption_response(char *payload, int ircfd)
         JsonNode *resg_json = json_decode(username,password);
         char *username = json_find_member(resg_json, "admin")->string_;
         char *password = json_find_member(resg_json, "admin")->string_;
-        printf("\r%s %s: %s> ",method,username, password);
+        printf("\r%s %s: %s> ",method,username, password)
         
     }
 }
