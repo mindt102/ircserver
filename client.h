@@ -8,6 +8,8 @@
 #include "shared_func.h"
 #include "json.h"
 
+#define BUFFER_SIZE 1024
+
 void handle_send_request(int encryptfd, char *message, char *clientid)
 {
     /*
@@ -24,14 +26,59 @@ void handle_send_request(int encryptfd, char *message, char *clientid)
     */
 
     // TODO: Parse message to check for register or login command
+    char *tempMsg = message;
 
     // TODO:
     // => Create register payload
     // => Send to encryption server
+    if (tempMsg == "REGISTER")
+    {
+        char get_usr[BUFFER_SIZE], get_pass[BUFFER_SIZE];
+        printf("-------------------------------------");
+        printf("REGISTER SCREEN\n");
+        printf("Input username to: ");
+        fgets(get_usr, BUFFER_SIZE, stdin);
 
+        printf("Input password: ");
+        fgets(get_pass, BUFFER_SIZE, stdin);
+
+        JsonNode *register_payload = json_mkobject();
+        JsonNode *method_register = json_mkstring("REGISTER");
+        JsonNode *method_username = json_mkstring(get_usr);
+        JsonNode *method_password = json_mkstring(get_pass);
+        json_append_member(register_payload, "method", method_register);
+        json_append_member(register_payload, "username", method_username);
+        json_append_member(register_payload, "password", method_password);
+        char *register_temp = json_encode(register_payload);
+
+        request_encryption_server("ENCRYPT", register_temp, encryptfd, 1);
+    }
     // TODO: Handle login commands
     // => Create login payload
     // => Send to encryption server
+    if (tempMsg == "LOGIN")
+    {
+
+        char get_usr[BUFFER_SIZE], get_pass[BUFFER_SIZE];
+        printf("-------------------------------------");
+        printf("LOGIN SCREEN\n");
+        printf("Input username: ");
+        fgets(get_usr, BUFFER_SIZE, stdin);
+
+        printf("Input password: ");
+        fgets(get_pass, BUFFER_SIZE, stdin);
+
+        JsonNode *login_payload = json_mkobject();
+        JsonNode *method_login = json_mkstring("LOGIN");
+        JsonNode *method_username = json_mkstring("admin");
+        JsonNode *method_password = json_mkstring("admin");
+        json_append_member(login_payload, "method", method_login);
+        json_append_member(login_payload, "username", method_username);
+        json_append_member(login_payload, "password", method_password);
+        char *login_temp = json_encode(login_payload);
+
+        request_encryption_server("ENCRYPT", login_temp, encryptfd, 1);
+    }
 
     // Create the payload for sending message to others
     JsonNode *payload_json = json_mkobject();                    // {}
@@ -104,5 +151,8 @@ void handle_encryption_response(char *payload, int ircfd)
         char *message_content = json_find_member(message_json, "message")->string_;
         // Display the received message to stdout
         printf("\r%s: %s> ", username, message_content);
+    }
+    else if (strcmp(method, "LOGIN") == 0){
+        
     }
 }
