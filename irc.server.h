@@ -48,17 +48,17 @@ void handle_authentication_response(char *payload, int encryptfd)
     json_append_member(message_json, "method", method_json);
     json_append_member(message_json, "status", status_json);
 
-    if (status == "FAIL"){
+    if (strcmp(status,"FAIL") == 0){
         char *error = json_find_member(payload_json,"error")->string_;
         JsonNode *error_json = json_mkstring(error);
         json_append_member(message_json, "error", error_json);
     }
-    else if (status == "SUCCESS"){
+    else if (strcmp(status,"SUCCESS") == 0){
         char *username = json_find_member(payload_json,"username")->string_;
         JsonNode *username_json = json_mkstring(username);
         json_append_member(message_json, "username", username_json);
     }
-    char *message = json_encode_string(message_json);
+    char *message = json_encode(message_json);
     
     request_encryption_server("ENCRYPT", message, encryptfd, receiver);
     
