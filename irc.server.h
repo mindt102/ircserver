@@ -44,7 +44,7 @@ void handle_unicast_request(char *payload, int encryptfd, int senderfd)
     // TODO: Create the payload and send to the encryption server to DECRYPT
 }
 
-void handle_client_request(char *payload, int encryptfd, int clientfd)
+void handle_client_request(char *payload, int authfd, int clientfd)
 {
     /*
     This function take the login or register request from the client and send to authentication server.
@@ -61,15 +61,29 @@ void handle_client_request(char *payload, int encryptfd, int clientfd)
     */
     JsonNode *payload_json = json_decode(payload);
     char *method = json_find_member(payload_json, "method")->string_;
-    char *message = json_find_member(payload_json, "message")->string_;
+    char *username = json_find_member(payload_json, "username")->string_;
+    int *password = json_find_member(payload_json, "password")->string_;
     // printf("Decrypted message: %s\n", message);
-    // Todo: Creat the payload and send to authentication server
+
+    JsonNode *resquest_json = json_mkobject();
+    JsonNode *receiver_json = json_mknumber(clientfd);
+    JsonNode *method_json = json_mkstring(method);
+    JsonNode *name_json = json_mkstring(username);
+    JsonNode *pass_json = json_mkstring(password);
+    json_append_member(resquest_json, "clientfd", receiver_json);
+    json_append_member(resquest_json, "method", method_json);
+    json_append_member(resquest_json, "username", name_json);
+    json_append_member(request_json, "password", pass_json);
+
+    char *request_buffer = json_encode(resquest_json);
+    send(authfd, request_buffer, strlen(request_buffer) + 1, 0);
 }
 
 void handle_encryption_response(char *payload, int *clientfds, int encryptfd, int authfd)
 {
 /*
     This function handle the payload received from the encryption server.
+
     The method of the incoming method can either be:
     - DECRYPT => The payload is the response of a DECRYPT request, contains the login or register message to send to authentication server
     - ENCRYPT => The payload is the response of a ENCRYPT request, contains encrypted payload to send to the client
@@ -87,7 +101,7 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     if (strcmp(method, "DECRYPT") == 0)
     {
         // Client request to login or register
-        handle_client_request(message, encryptfd, receiver);
+        handle_client_request(message, authfd, receiver);
     }
     else if (strcmp(method, "ENCRYPT") == 0)
     {
