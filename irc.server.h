@@ -93,42 +93,19 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     {
         // The encrypted payload of the login or register result
         // Hoang: Create the payload and send to the receiver (i.e. the client)
-        
-    // extract the encrypted message from the payload
-    char *encrypted_message = json_find_member(payload_json, "message")->string_;
-    char *decrypted_message = decrypt(encrypted_message);
-    strcpy(decrypted_message, encrypted_message);
-    char *encrypted_message_end = strstr(encrypted_message, "\n");
-    *encrypted_message_end = '\0';
-    printf("Encrypted message: %s\n", encrypted_message);
-    free(encrypted_message);
-    
-    // 2. Extract the receiver
-    char *receiver_buffer = json_find_member(payload_json, "receiver")->string_;
-    int receiver = json_find_member(payload_json, "receiver")->number_;
-    printf("Receiver: %d\n", receiver);
-    int receiver_fd = clientfds[receiver];
-    printf("Receiver fd: %d\n", receiver_fd);
 
-    // 3. Create the payload 
+     //  Create the payload 
     JsonNode *resquest_json = json_mkobject();
-    JsonNode *receiver_json = json_mknumber(receiver);
-    JsonNode *method_json = json_mkstring(method);
+    JsonNode *method_json = json_mkstring("UNICAST");
     JsonNode *raw_message_json = json_mkstring(message);
-    json_append_member(resquest_json, "0", receiver_json);
-    json_append_member(resquest_json,  "ENCRYPT", method_json);
-    json_append_member(resquest_json, "encrypted( {'method': 'LOGIN', 'username': 'admin', 'password': 'admin'} )", raw_message_json);
+   
+    json_append_member(resquest_json,  "method", method_json);
+    json_append_member(resquest_json, "message ", raw_message_json);
 
     // send to the client
     
-    char *payload = malloc(sizeof(char) * 1024);
-    sprintf(payload, "{\"method\": \"ENCRYPT\", \"receiver\": %d, \"encrypted\": \"%s\"}", receiver, encrypted_message);
-    printf("Payload: %s\n", payload);
-    send(receiver_fd, payload, strlen(payload), 0);
-    free(payload);
-    free(encrypted_message);
-     
-     // char *request_buffer = json_encode(resquest_json);
+    char *payload = json_encode(resquest_json);
+    send(receiver, payload, strlen(payload), 0);
     }
 }
 
