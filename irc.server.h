@@ -64,7 +64,7 @@ void handle_client_request(char *payload, int authfd, int clientfd)
     char *username = json_find_member(payload_json, "username")->string_;
     int *password = json_find_member(payload_json, "password")->string_;
     // printf("Decrypted message: %s\n", message);
-    // Tran Quy Duong: Creat the payload and send to authentication server
+
     JsonNode *resquest_json = json_mkobject();
     JsonNode *receiver_json = json_mknumber(clientfd);
     JsonNode *method_json = json_mkstring(method);
@@ -81,13 +81,16 @@ void handle_client_request(char *payload, int authfd, int clientfd)
 
 void handle_encryption_response(char *payload, int *clientfds, int encryptfd, int authfd)
 {
-    /*
+/*
     This function handle the payload received from the encryption server.
 
     The method of the incoming method can either be:
     - DECRYPT => The payload is the response of a DECRYPT request, contains the login or register message to send to authentication server
     - ENCRYPT => The payload is the response of a ENCRYPT request, contains encrypted payload to send to the client
-    */
+    
+*/
+
+
 
     // Decode the incoming payload
     JsonNode *payload_json = json_decode(payload);
@@ -103,10 +106,20 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     else if (strcmp(method, "ENCRYPT") == 0)
     {
         // The encrypted payload of the login or register result
-        // TODO: Create the payload and send to the receiver (i.e. the client)
-        // 1. Extract the encrypted message
-        // 2. Extract the receiver
-        // 3. Create the payload and send the encrypted message to the receiver
+        // Hoang: Create the payload and send to the receiver (i.e. the client)
+
+     //  Create the payload 
+    JsonNode *resquest_json = json_mkobject();
+    JsonNode *method_json = json_mkstring("UNICAST");
+    JsonNode *raw_message_json = json_mkstring(message);
+   
+    json_append_member(resquest_json,  "method", method_json);
+    json_append_member(resquest_json, "message ", raw_message_json);
+
+    // send to the client
+    
+    char *payload = json_encode(resquest_json);
+    send(receiver, payload, strlen(payload), 0);
     }
 }
 
