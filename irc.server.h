@@ -96,7 +96,6 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
         
     // extract the encrypted message from the payload
     char *encrypted_message = json_find_member(payload_json, "message")->string_;
-    double encrypted_message_len = json_find_member(payload_json, "message_len")->number_;
     char *decrypted_message = decrypt(encrypted_message);
     strcpy(decrypted_message, encrypted_message);
     char *encrypted_message_end = strstr(encrypted_message, "\n");
@@ -111,7 +110,7 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     int receiver_fd = clientfds[receiver];
     printf("Receiver fd: %d\n", receiver_fd);
 
-    // 3. Create the payload and send the encrypted message to the receiver
+    // 3. Create the payload 
     JsonNode *resquest_json = json_mkobject();
     JsonNode *receiver_json = json_mknumber(receiver);
     JsonNode *method_json = json_mkstring(method);
