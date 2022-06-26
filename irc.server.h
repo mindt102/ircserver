@@ -63,17 +63,20 @@ void handle_client_request(char *payload, int encryptfd, int clientfd)
     char *method = json_find_member(payload_json, "method")->string_;
     char *message = json_find_member(payload_json, "message")->string_;
     // printf("Decrypted message: %s\n", message);
-    // Hoang: Creat the payload and send to authentication server
+    // Todo: Creat the payload and send to authentication server
 }
 
 void handle_encryption_response(char *payload, int *clientfds, int encryptfd, int authfd)
 {
-    /*
+/*
     This function handle the payload received from the encryption server.
     The method of the incoming method can either be:
     - DECRYPT => The payload is the response of a DECRYPT request, contains the login or register message to send to authentication server
     - ENCRYPT => The payload is the response of a ENCRYPT request, contains encrypted payload to send to the client
-    */
+    
+*/
+
+
 
     // Decode the incoming payload
     JsonNode *payload_json = json_decode(payload);
@@ -89,10 +92,34 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     else if (strcmp(method, "ENCRYPT") == 0)
     {
         // The encrypted payload of the login or register result
-        // TODO: Create the payload and send to the receiver (i.e. the client)
+        // Hoang: Create the payload and send to the receiver (i.e. the client)
         // 1. Extract the encrypted message
+    char *encrypted_message = json_find_member(payload_json, "encrypted")->string_;
+    
+    
+
+
+
+     
+
         // 2. Extract the receiver
+    char *receiver_buffer = json_find_member(payload_json, "receiver")->string_;
+
+
+
+
         // 3. Create the payload and send the encrypted message to the receiver
+    JsonNode *resquest_json = json_mkobject();
+    JsonNode *receiver_json = json_mknumber(receiver);
+    JsonNode *method_json = json_mkstring(method);
+    JsonNode *raw_message_json = json_mkstring(message);
+    json_append_member(resquest_json, "0", receiver_json);
+    json_append_member(resquest_json,  "ENCRYPT", method_json);
+    json_append_member(resquest_json, "encrypted( {'method': 'LOGIN', 'username': 'admin', 'password': 'admin'} )", raw_message_json);
+        // send to the client
+    char *request_buffer = json_encode(resquest_json);
+    send(clientfds[receiver], request_buffer, strlen(request_buffer) + 1, 0);
+    
     }
 }
 
