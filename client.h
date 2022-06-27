@@ -35,7 +35,7 @@ void handle_send_request(int encryptfd, char *message, char *clientid, char *usr
     if (strcmp(tempMsg, "REGISTER\n") == 0)
     {
         char get_usr[BUFFER_SIZE], get_pass[BUFFER_SIZE];
-        printf("-------------------------------------");
+        printf("-------------------------------------\n");
         printf("REGISTER SCREEN\n");
         printf("Input username to: ");
         fgets(get_usr, BUFFER_SIZE, stdin);
@@ -61,7 +61,7 @@ void handle_send_request(int encryptfd, char *message, char *clientid, char *usr
     {
 
         char get_usr[BUFFER_SIZE], get_pass[BUFFER_SIZE];
-        printf("-------------------------------------");
+        printf("-------------------------------------\n");
         printf("LOGIN SCREEN\n");
         printf("Input username: ");
         fgets(get_usr, BUFFER_SIZE, stdin);
