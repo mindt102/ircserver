@@ -76,7 +76,7 @@ int main(int argc, char **argv)
             if (valid_msg)
             {
                 // Handle message receiving logic
-                handle_encryption_response(message, ircfd, username);
+                handle_encryption_response(message, ircfd, *username);
             }
         }
         else if (enc_status == 0)
