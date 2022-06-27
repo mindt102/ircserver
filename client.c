@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     int irc_status, enc_status;
     while (connected)
     {
-        char username[MAX_LENGTH];
+        char *username[MAX_LENGTH];
         irc_status = recv(ircfd, message, sizeof(message), 0);
         if (irc_status > 0)
         {
