@@ -92,16 +92,16 @@ void request_encryption_server(char *method, char *message, int encryptfd, int r
     */
 
     // Create the payload
-    JsonNode *resquest_json = json_mkobject();
+    JsonNode *request_json = json_mkobject();
     JsonNode *receiver_json = json_mknumber(receiver);
     JsonNode *method_json = json_mkstring(method);
     JsonNode *raw_message_json = json_mkstring(message);
-    json_append_member(resquest_json, "receiver", receiver_json);
-    json_append_member(resquest_json, "method", method_json);
-    json_append_member(resquest_json, "message", raw_message_json);
+    json_append_member(request_json, "receiver", receiver_json);
+    json_append_member(request_json, "method", method_json);
+    json_append_member(request_json, "message", raw_message_json);
 
     // Send the payload to the encryption server
-    char *request_buffer = json_encode(resquest_json);
+    char *request_buffer = json_encode(request_json);
     // printf("Request payload: %s\n", request_buffer);
     send(encryptfd, request_buffer, strlen(request_buffer) + 1, 0);
 }
