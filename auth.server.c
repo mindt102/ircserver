@@ -24,7 +24,8 @@ int main(int argc, char **argv)
         port = atoi(argv[1]);
     }
 
-    int sockfd, clen, clientfd;
+    int sockfd, clientfd;
+    socklen_t clen;
     struct sockaddr_in saddr, caddr;
     clen = sizeof(caddr);
 
@@ -141,7 +142,7 @@ int main(int argc, char **argv)
                     }
 
                     // Handle all server logic
-                    server_handler(message, clientfds, clientfds[i]);
+                    server_handler(message, clientfds[i]);
                 }
                 else if (read_status == 0)
                 {
