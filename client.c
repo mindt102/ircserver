@@ -51,6 +51,7 @@ int main(int argc, char **argv)
     int irc_status, enc_status;
     while (connected)
     {
+        char username[MAX_LENGTH];
         irc_status = recv(ircfd, message, sizeof(message), 0);
         if (irc_status > 0)
         {
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
             if (valid_msg)
             {
                 // Handle message receiving logic
-                handle_encryption_response(message, ircfd);
+                handle_encryption_response(message, ircfd, username);
             }
         }
         else if (enc_status == 0)
@@ -96,7 +97,7 @@ int main(int argc, char **argv)
                 }
 
                 // Handle message sending logic
-                handle_send_request(encryptfd, message, id);
+                handle_send_request(encryptfd, message, id, username);
 
                 if (connected)
                 {
