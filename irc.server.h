@@ -5,7 +5,20 @@
 #include "shared_func.h"
 #include "json.h"
 
-void broadcast(char *message, int *clientfds, int encryptfd, int authfd, int senderfd)
+void authorize_client(int clientfd, int *clientfds, int *authed_clients)
+{
+    for (int i = 0; i < MAX_CLIENT; i++)
+    {
+        if (clientfds[i] == clientfd)
+        {
+            authed_clients[i] = 1;
+            break;
+        }
+        printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
+    }
+}
+
+void broadcast(char *message, int *clientfds, int *authed_clients, int encryptfd, int authfd, int senderfd)
 {
     /*
     This function broadcast a message to all clients except for
@@ -16,15 +29,17 @@ void broadcast(char *message, int *clientfds, int encryptfd, int authfd, int sen
     for (int i = 0; i < MAX_CLIENT; i++)
     {
         int clientfd = clientfds[i];
+        // printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
+
         // Send the message if file the descriptor belongs to a valid client
-        if (clientfd != 0 && clientfd != encryptfd && clientfd != authfd && clientfd != senderfd)
+        if (clientfd != 0 && clientfd != encryptfd && clientfd != authfd && clientfd != senderfd && authed_clients[i] == 1)
         {
             send(clientfd, message, strlen(message) + 1, 0);
         }
     }
 }
 
-void handle_authentication_response(char *payload, int encryptfd)
+void handle_authentication_response(char *payload, int encryptfd, int *clientfds, int *authed_clients)
 {
     /*
     This function handle the responses from the authentication server and send to encryption server
@@ -35,7 +50,7 @@ void handle_authentication_response(char *payload, int encryptfd)
         "username" or "error": "admin" or "Incorrect username"
     }
     */
-
+    printf("Auth payload: %s\n", payload);
     // HaTrang: TODO: Create the payload and send to the encryption server to ENCRYPT
     JsonNode *payload_json = json_decode(payload);
     int receiver = json_find_member(payload_json, "receiver")->number_;
@@ -59,18 +74,17 @@ void handle_authentication_response(char *payload, int encryptfd)
         char *username = json_find_member(payload_json, "username")->string_;
         JsonNode *username_json = json_mkstring(username);
         json_append_member(message_json, "username", username_json);
+        authorize_client(receiver, clientfds, authed_clients);
     }
     char *message = json_encode(message_json);
-
+    printf("Auth response to client: %s\n", message);
     request_encryption_server("ENCRYPT", message, encryptfd, receiver);
 }
 
 void handle_unicast_request(char *payload, int encryptfd, int senderfd)
 {
     // HaTrang TODO: call function to DECRYPT
-    JsonNode *payload_json = json_decode(payload);
-    char *message = json_find_member(payload_json, "message")->string_;
-    request_encryption_server("DECRYPT", message, encryptfd, senderfd);
+    request_encryption_server("DECRYPT", payload, encryptfd, senderfd);
 }
 
 void handle_client_request(char *payload, int authfd, int clientfd)
@@ -88,23 +102,24 @@ void handle_client_request(char *payload, int authfd, int clientfd)
     - username is the username of the client
     - password is the password of the client
     */
+    printf("Payload from client: %s\n", payload);
     JsonNode *payload_json = json_decode(payload);
     char *method = json_find_member(payload_json, "method")->string_;
     char *username = json_find_member(payload_json, "username")->string_;
     char *password = json_find_member(payload_json, "password")->string_;
-    // printf("Decrypted message: %s\n", message);
 
     JsonNode *request_json = json_mkobject();
     JsonNode *receiver_json = json_mknumber(clientfd);
     JsonNode *method_json = json_mkstring(method);
     JsonNode *name_json = json_mkstring(username);
     JsonNode *pass_json = json_mkstring(password);
-    json_append_member(request_json, "clientfd", receiver_json);
+    json_append_member(request_json, "receiver", receiver_json);
     json_append_member(request_json, "method", method_json);
     json_append_member(request_json, "username", name_json);
     json_append_member(request_json, "password", pass_json);
 
     char *request_buffer = json_encode(request_json);
+    printf("Send to auth: %s\n", request_buffer);
     send(authfd, request_buffer, strlen(request_buffer) + 1, 0);
 }
 
@@ -141,16 +156,17 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
         JsonNode *raw_message_json = json_mkstring(message);
 
         json_append_member(request_json, "method", method_json);
-        json_append_member(request_json, "message ", raw_message_json);
+        json_append_member(request_json, "message", raw_message_json);
 
         // send to the client
 
         char *payload = json_encode(request_json);
-        send(receiver, payload, strlen(payload), 0);
+        printf("Send to client: %s\n", payload);
+        send(receiver, payload, strlen(payload) + 1, 0);
     }
 }
 
-void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int encryptfd)
+void server_handler(char *payload, int *clientfds, int *authed_clients, int senderfd, int authfd, int encryptfd)
 {
     /*
     This function is the main function to handle all incoming requests to IRC server.
@@ -169,7 +185,7 @@ void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int
     if (senderfd == authfd)
     {
         /* Payload comes from authentication server */
-        handle_authentication_response(payload, encryptfd);
+        handle_authentication_response(payload, encryptfd, clientfds, authed_clients);
     }
     else if (senderfd == encryptfd)
     {
@@ -182,13 +198,17 @@ void server_handler(char *payload, int *clientfds, int senderfd, int authfd, int
         if (strcmp(method, "BROADCAST") == 0)
         {
             printf("Broadcast payload: %s\n", payload);
-            broadcast(payload, clientfds, encryptfd, authfd, senderfd);
+            broadcast(payload, clientfds, authed_clients, encryptfd, authfd, senderfd);
         }
         else if (strcmp(method, "UNICAST") == 0)
         {
             char *encrypted_message = json_find_member(received_payload, "message")->string_;
+            printf("Encrypted message: %s\n", encrypted_message);
             handle_unicast_request(encrypted_message, encryptfd, senderfd);
-            // printf("Encrypted message: %s\n", encrypted_message);
+        }
+        else if (strcmp(method, "INIT") == 0)
+        {
+            authorize_client(senderfd, clientfds, authed_clients);
         }
     }
 }

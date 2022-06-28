@@ -6,9 +6,7 @@
 #include "shared_func.h"
 #include "json.h"
 
-char message[1024];
-char encryp[1024];   // to store encryp msg
-char decryp[1024];   // to store decryp msg
+// char message[1024];
 long int temp[1024]; // do something
 int e;               // public key
 int d;               // private key
@@ -41,14 +39,15 @@ void base64_cleanup()
     free(decoding_table);
 }
 
-char *base64_encode(const char *data,
+char *base64_encode(unsigned char *data,
                     size_t input_length,
                     size_t *output_length)
 {
 
     *output_length = 4 * ((input_length + 2) / 3);
 
-    char *encoded_data = malloc(*output_length);
+    char *encoded_data = malloc(*output_length + 1);
+    memset(encoded_data, '\0', *output_length);
     if (encoded_data == NULL)
         return NULL;
 
@@ -65,17 +64,22 @@ char *base64_encode(const char *data,
         encoded_data[j++] = encoding_table[(triple >> 2 * 6) & 0x3F];
         encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
         encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
+        // printf("%d\n", j);
     }
 
     // int i=0;
     for (int i = 0; i < mod_table[input_length % 3]; i++)
         encoded_data[*output_length - 1 - i] = '=';
+    encoded_data[*output_length] = '\0';
 
-    printf("Encoded length: %ld\n", *output_length);
+    // for (int i = 0; i <= strlen(encoded_data); i++)
+    // {
+    //     printf("j=%d, encoded=%c\n", i, encoded_data[i]);
+    // }
+    printf("Input length: %ld\n", input_length);
+    printf("Output length: %ld\n", *output_length);
     printf("Encoded data: %s\n", encoded_data);
     return encoded_data;
-    *output_length = *output_length - 2 + mod_table[input_length % 3];
-    encoded_data[*output_length] = 0;
 }
 
 unsigned char *base64_decode(const char *data,
@@ -87,13 +91,10 @@ unsigned char *base64_decode(const char *data,
         build_decoding_table();
     if (input_length % 4 != 0)
         return NULL;
-    printf("Hello I'm decoding\n");
-    printf("Input length: %ld\n", (input_length));
     *output_length = input_length / 4 * 3;
 
     if (data[input_length - 1] == '=')
         (*output_length)--;
-    printf("Output length: %ld\n", (*output_length));
     if (data[input_length - 2] == '=')
         (*output_length)--;
     unsigned char *decoded_data = malloc(*output_length);
@@ -154,56 +155,56 @@ int coprime(int a, int b)
         return 2; // false
 }
 
-char *encrypt(char *message)
+char *encrypt(char *raw_message)
 {
+    // char *encryp = (char *)malloc(1024); // to store encryp msg
     long int pt1, pt2; // pointer1 , pointer2
-    long int len = strlen(message);
-    printf("Message to encrypt: %s, size: %d\n", message, len);
+    long int len = strlen(raw_message);
     int *encrypted_msg = (int *)malloc(len * sizeof(int));
     int i = 0;
     while (i < len)
     {
-        pt1 = message[i];
+        pt1 = raw_message[i];
         pt1 = pt1;
         int k = Calculate(pt1, e, m); // pt1 ^ e mod m
         temp[i] = k;
         pt2 = k;
         encrypted_msg[i] = pt2;
-        printf("i: %d, pt2: %d, pt1: %d\n", i, pt2, pt1);
+        printf("pt2 = %ld, raw[%d] = %c\n", pt2, i, raw_message[i]);
         i++;
     }
 
-    size_t message_size = strlen(message);
-    char *encode_data = base64_encode((char *)encrypted_msg, len * sizeof(int), &len);
+    size_t message_size = strlen(raw_message);
+    char *encode_data = base64_encode((char *)encrypted_msg, (len + 1) * sizeof(int), &len);
     free(encrypted_msg);
-    printf("After encoding: %s\n", encode_data);
+    printf("Encrypt result: %s\n", encode_data);
     return encode_data;
 }
 
-char *decrypt(char *message) // Base64 message
+char *decrypt(char *encoded_message) // Base64 message
 {
+    char *decryp = malloc(sizeof(char) * 1024); // to store decryp msg
+
     long int pt1, pt2; // pointer1, pointer2
     int i = 0;
-    size_t message_size = strlen(message);
+    size_t message_size = strlen(encoded_message);
     size_t *decoded_size = (size_t *)malloc(sizeof(size_t));
-    printf("Message size: %ld\n", message_size);
-    printf("Message: %s\n", message);
-    int *encrypted_msg = (int *)malloc(message_size * sizeof(int));
+    int *encrypted_msg = (int *)malloc((message_size + 1) * sizeof(int));
 
-    encrypted_msg = (int *)base64_decode(message, message_size, decoded_size);
-    printf("Finish decoding, decoded size: %ld\n", (*decoded_size));
-    printf("14th one: %d\n", encrypted_msg[14]);
+    encrypted_msg = (int *)base64_decode(encoded_message, message_size, decoded_size);
+    printf("Decoded size: %ld\n", *decoded_size);
 
-    for (i; i < (*decoded_size); i++)
+    for (i; i < ((*decoded_size) / 4 - 1); i++)
     {
         pt2 = encrypted_msg[i];
         int k = Calculate(pt2, d, m); // ct ^ d mod m
         pt1 = k;
         decryp[i] = pt1;
-        printf("i: %d, pt2: %d, pt1: %d\n", i, pt2, pt1);
+        printf("pt2 = %ld, decryp[%d] = %c\n", pt2, i, decryp[i]);
     }
+    decryp[i] = '\0';
     free(encrypted_msg);
-    printf("Decryption result: %s\n", decryp);
+    printf("Decrypt result: %s\n", decryp);
     return decryp;
 }
 
@@ -227,15 +228,6 @@ void Gen_key()
     }
 }
 
-void RSA()
-{
-    for (int i = 0; message[i] != '\0'; i++)
-    {
-        decryp[i] = message[i];
-    }
-    printf("Finish copying\n");
-}
-
 void handle_request(char *request, int senderfd)
 {
     /*
@@ -256,51 +248,60 @@ void handle_request(char *request, int senderfd)
     int compare;
     char *check = "ENCRYPT";
     compare = strcmp(check, method);
+    printf("Request message: %s\n", request_message);
+
     if (compare == 0)
     {
-        // RSA();
         Gen_key();
-        printf("d: %d, e: %d\n", d, e);
-        // encrypt();
-        char *response_message = encrypt(request_message);
-
+        char response_message[1024];
+        // char *response_message = encrypt(request_message);
+        char *temp = encrypt(request_message);
+        strcpy(response_message, temp);
+        printf("Response message: %s, len %ld\n", response_message, strlen(response_message));
         // Create the response payload
         JsonNode *response_json = json_mkobject();
+        JsonNode *message_json = json_mkstring(response_message);
         JsonNode *client_fd_json = json_mknumber(receiver);
         JsonNode *method_json = json_mkstring(method);
-        JsonNode *message_json = json_mkstring(response_message);
+        json_append_member(response_json, "message", message_json);
         json_append_member(response_json, "receiver", client_fd_json);
         json_append_member(response_json, "method", method_json);
-        json_append_member(response_json, "message", message_json);
 
         // Encode the json response to string
-        char *response_buffer = json_encode(response_json);
-        printf("Encrypted: %s\n", response_buffer);
+        char *buffer = json_encode(response_json);
+        printf("Encrypted: %s\n", buffer);
 
         // Send back the encrypted or decrypted payload
-        send(senderfd, response_buffer, strlen(response_buffer) + 1, 0);
+        send(senderfd, buffer, strlen(buffer) + 1, 0);
+        // free(response_message);
+        free(temp);
         // memset(message, sizeof(message),0);
     }
     else
     {
-        printf("Message to decrypt: %s\n", message);
 
+        // char response_message[1024];
         char *response_message = decrypt(request_message);
+        // char *temp = decrypt(request_message);
+        // memset(response_message, '\0', 1024);
+        // strcpy(response_message, temp);
+        // response_message[328] = '\0';
         printf("Response message: %s\n", response_message);
         // Create the response payload
         JsonNode *response_json = json_mkobject();
         JsonNode *client_fd_json = json_mknumber(receiver);
         JsonNode *method_json = json_mkstring(method);
         JsonNode *message_json = json_mkstring(response_message);
+        json_append_member(response_json, "message", message_json);
         json_append_member(response_json, "receiver", client_fd_json);
         json_append_member(response_json, "method", method_json);
-        json_append_member(response_json, "message", message_json);
 
         // Encode the json response to string
         char *response_buffer = json_encode(response_json);
-        printf("Decrypted: %s\n", response_buffer);
+        printf("Decrypted for %d: %s\n", senderfd, response_buffer);
 
         // Send back the encrypted or decrypted payload
         send(senderfd, response_buffer, strlen(response_buffer) + 1, 0);
+        // free(response_message);
     }
 }

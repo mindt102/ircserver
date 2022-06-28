@@ -18,8 +18,10 @@ int main(int argc, char **argv)
     setbuf(stdout, NULL);
 
     // Initialize arrays to store all clients' file descriptor
-    int clientfds[MAX_CLIENT], sockfl;
+    int clientfds[MAX_CLIENT], authed_clients[MAX_CLIENT];
+    int sockfl;
     memset(clientfds, 0, sizeof(clientfds));
+    memset(authed_clients, 0, sizeof(authed_clients));
 
     // Define the port
     int port = DEFAULT_PORT;
@@ -42,6 +44,12 @@ int main(int argc, char **argv)
         fcntl(remotefd, F_SETFL, sockfl);
 
         clientfds[0] = remotefd;
+        authed_clients[0] = 1;
+
+        JsonNode *init_payload = json_mkobject();
+        json_append_member(init_payload, "method", json_mkstring("INIT"));
+        char* buffer = json_encode(init_payload);
+        send(remotefd, buffer, strlen(buffer) + 1, 0);
     }
 
     int sockfd, clen, clientfd;
@@ -49,12 +57,12 @@ int main(int argc, char **argv)
     clen = sizeof(caddr);
 
     // Connect to the authentication server
-    // int authfd = connect_to_server("localhost", "4444");
-    // sockfl = fcntl(authfd, F_GETFL, 0);
-    // sockfl |= O_NONBLOCK;
-    // fcntl(authfd, F_SETFL, sockfl);
-    // clientfds[1] = authfd;
-    int authfd = 0;
+    int authfd = connect_to_server("localhost", 4444);
+    sockfl = fcntl(authfd, F_GETFL, 0);
+    sockfl |= O_NONBLOCK;
+    fcntl(authfd, F_SETFL, sockfl);
+    clientfds[1] = authfd;
+    // int authfd = 0;
 
     // Connect to the encryption server
     int encryptfd = connect_to_server("localhost", 4443);
@@ -181,13 +189,14 @@ int main(int argc, char **argv)
                     }
 
                     // Handle all server logic
-                    server_handler(message, clientfds, clientfds[i], authfd, encryptfd);
+                    server_handler(message, clientfds, authed_clients, clientfds[i], authfd, encryptfd);
                 }
                 else if (read_status == 0)
                 {
                     printf("\rClient %d has disconnected.\n", clientfds[i]);
                     close(clientfds[i]);
                     clientfds[i] = 0;
+                    authed_clients[i] = 0;
                 }
             }
         }
