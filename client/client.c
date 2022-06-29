@@ -23,7 +23,15 @@ int main(int argc, char **argv)
     int irc_port = IRC_DEFAULT_PORT;
     char irc_host[MAX_LENGTH] = DEFAULT_HOST;
     int enc_port = ENC_DEFAULT_PORT;
-    char enc_host[MAX_LENGTH] = DEFAULT_HOST;
+    char enc_host[MAX_LENGTH];
+    if (getenv("ENC_HOST"))
+    {
+        strncpy(enc_host, getenv("ENC_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(enc_host, DEFAULT_HOST, MAX_LENGTH);
+    }
 
     if (argc > 1)
     {
@@ -51,6 +59,7 @@ int main(int argc, char **argv)
     int irc_status, enc_status;
     while (connected)
     {
+        char username[MAX_LENGTH];
         irc_status = recv(ircfd, message, sizeof(message), 0);
         if (irc_status > 0)
         {
@@ -75,7 +84,7 @@ int main(int argc, char **argv)
             if (valid_msg)
             {
                 // Handle message receiving logic
-                handle_encryption_response(message, ircfd);
+                handle_encryption_response(message, ircfd, username);
             }
         }
         else if (enc_status == 0)
@@ -96,7 +105,7 @@ int main(int argc, char **argv)
                 }
 
                 // Handle message sending logic
-                handle_send_request(encryptfd, message, id);
+                handle_send_request(encryptfd, message, id, username);
 
                 if (connected)
                 {

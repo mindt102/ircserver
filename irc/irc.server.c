@@ -7,58 +7,125 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
-#include "auth.server.h"
+#include <sys/select.h>
+#include "irc.server.h"
 
-#define DEFAULT_PORT 4444
+#define MAX_LENGTH 255
+#define DEFAULT_PORT 8784
 
 int main(int argc, char **argv)
 {
+    // Remove stdout buffer => Always print to stdout
     setbuf(stdout, NULL);
 
-    int clientfds[MAX_CLIENT];
+    // Initialize arrays to store all clients' file descriptor
+    int clientfds[MAX_CLIENT], authed_clients[MAX_CLIENT];
+    int sockfl;
     memset(clientfds, 0, sizeof(clientfds));
+    memset(authed_clients, 0, sizeof(authed_clients));
 
+    // Define the port
     int port = DEFAULT_PORT;
     if (argc > 1)
     {
         port = atoi(argv[1]);
     }
 
-    int sockfd, clen, clientfd;
+    // Connect to another IRC server
+    if (argc > 2)
+    {
+        int remoteport = atoi(argv[3]);
+        char hostname[MAX_LENGTH];
+        strncpy(hostname, argv[2], MAX_LENGTH);
+
+        int remotefd = connect_to_server(hostname, remoteport);
+
+        sockfl = fcntl(remotefd, F_GETFL, 0);
+        sockfl |= O_NONBLOCK;
+        fcntl(remotefd, F_SETFL, sockfl);
+
+        clientfds[0] = remotefd;
+        authed_clients[0] = 1;
+
+        JsonNode *init_payload = json_mkobject();
+        json_append_member(init_payload, "method", json_mkstring("INIT"));
+        char *buffer = json_encode(init_payload);
+        send(remotefd, buffer, strlen(buffer) + 1, 0);
+    }
+
+    int sockfd, clientfd;
+    socklen_t clen;
     struct sockaddr_in saddr, caddr;
     clen = sizeof(caddr);
+    char authHost[MAX_LENGTH];
+    if (getenv("AUTH_HOST"))
+    {
+        strncpy(authHost, getenv("AUTH_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(authHost, "localhost", MAX_LENGTH);
+    }
+    // Connect to the authentication server
+    int authfd = connect_to_server(authHost, 4444);
+    sockfl = fcntl(authfd, F_GETFL, 0);
+    sockfl |= O_NONBLOCK;
+    fcntl(authfd, F_SETFL, sockfl);
+    clientfds[1] = authfd;
+    // int authfd = 0;
 
+    // Connect to the encryption server
+    char encHost[MAX_LENGTH];
+    if (getenv("ENC_HOST"))
+    {
+        strncpy(encHost, getenv("ENC_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(encHost, "localhost", MAX_LENGTH);
+    }
+    int encryptfd = connect_to_server(encHost, 4443);
+    sockfl = fcntl(encryptfd, F_GETFL, 0);
+    sockfl |= O_NONBLOCK;
+    fcntl(encryptfd, F_SETFL, sockfl);
+    clientfds[2] = encryptfd;
+
+    // Create the main socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("Error creating socket\n");
         return 1;
     }
 
+    // Make socket become non blocking
     setsockopt(sockfd, SOL_SOCKET,
                SO_REUSEADDR, &(int){1},
                sizeof(int));
-
-    int sockfl = fcntl(sockfd, F_GETFL, 0);
+    sockfl = fcntl(sockfd, F_GETFL, 0);
     sockfl |= O_NONBLOCK;
     fcntl(sockfd, F_SETFL, sockfl);
 
+    // Configure the address and port
     memset(&saddr, 0, sizeof(saddr));
     saddr.sin_family = AF_INET;
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
     saddr.sin_port = htons(port);
 
+    // Bind the socket to the address and port
     if (bind(sockfd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
     {
         perror("Error binding");
         return 1;
     }
 
+    // Make socket ready to listen to incomming connection
     if (listen(sockfd, 5) < 0)
     {
         perror("Error listening");
         return 1;
     }
 
+    // Prepare poll to check for data in stdin
     struct pollfd stdin_pollfd;
     stdin_pollfd.fd = fileno(stdin);
     stdin_pollfd.events = POLLIN;
@@ -141,13 +208,14 @@ int main(int argc, char **argv)
                     }
 
                     // Handle all server logic
-                    server_handler(message, clientfds, clientfds[i]);
+                    server_handler(message, clientfds, authed_clients, clientfds[i], authfd, encryptfd);
                 }
                 else if (read_status == 0)
                 {
                     printf("\rClient %d has disconnected.\n", clientfds[i]);
                     close(clientfds[i]);
                     clientfds[i] = 0;
+                    authed_clients[i] = 0;
                 }
             }
         }

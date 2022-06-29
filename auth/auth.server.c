@@ -7,9 +7,10 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
-#include "enc.server.h"
+#include <sys/select.h>
+#include "auth.server.h"
 
-#define DEFAULT_PORT 4443
+#define DEFAULT_PORT 4444
 
 int main(int argc, char **argv)
 {
@@ -24,7 +25,8 @@ int main(int argc, char **argv)
         port = atoi(argv[1]);
     }
 
-    int sockfd, clen, clientfd;
+    int sockfd, clientfd;
+    socklen_t clen;
     struct sockaddr_in saddr, caddr;
     clen = sizeof(caddr);
 
@@ -141,7 +143,7 @@ int main(int argc, char **argv)
                     }
 
                     // Handle all server logic
-                    handle_request(message, clientfds[i]);
+                    server_handler(message, clientfds[i]);
                 }
                 else if (read_status == 0)
                 {

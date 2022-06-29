@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  auth:
+    container_name: irc_auth
+    build:
+      context: .
+      dockerfile: auth.Dockerfile
+    ports:
+      - 4444:4444
+  enc:
+    container_name: irc_enc
+    build:
+      context: .
+      dockerfile: enc.Dockerfile
+    ports:
+      - 4443:4443
+  irc:
+    container_name: irc_server
+    build:
+      context: .
+      dockerfile: irc.Dockerfile
+    ports:
+      - 8784:8784
+    depends_on:
+      - auth
+      - enc
+  client:
+    container_name: irc_client
+    build:
+      context: .
+      dockerfile: client.Dockerfile
+
+networks:
+  default:
+    name: irc-np
