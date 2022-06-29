@@ -7,6 +7,7 @@ services:
       dockerfile: auth.Dockerfile
     ports:
       - 4444:4444
+    restart: always
   enc:
     container_name: irc_enc
     build:
@@ -14,6 +15,8 @@ services:
       dockerfile: enc.Dockerfile
     ports:
       - 4443:4443
+    restart: always
+
   irc:
     container_name: irc_server
     build:
@@ -24,6 +27,8 @@ services:
     depends_on:
       - auth
       - enc
+    restart: always
+
   client:
     container_name: irc_client
     build:
