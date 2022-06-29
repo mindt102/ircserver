@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        strncpy(enc_host, "localhost", MAX_LENGTH);
+        strncpy(enc_host, DEFAULT_HOST, MAX_LENGTH);
     }
 
     if (argc > 1)
