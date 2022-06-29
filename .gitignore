@@ -1,4 +1,5 @@
 *.out
 *.server
 .vscode/
-irc.db
+*.db
+irc_client
