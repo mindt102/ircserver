@@ -44,7 +44,7 @@ User *selectUser(char *name)
     const char *data = "Callback function called";
 
     /* Open database */
-    rc = sqlite3_open("test.db", &db);
+    rc = sqlite3_open("irc.db", &db);
 
     if (rc)
     {
@@ -77,7 +77,7 @@ int insertUser(char *username, char *password)
     char sql[255];
 
     /* Open database */
-    rc = sqlite3_open("test.db", &db);
+    rc = sqlite3_open("irc.db", &db);
 
     if (rc)
     {

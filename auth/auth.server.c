@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include "auth.server.h"
 
 #define DEFAULT_PORT 4444

@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     char *sql;
 
     /* Open database */
-    rc = sqlite3_open("test.db", &db);
+    rc = sqlite3_open("irc.db", &db);
 
     if (rc)
     {

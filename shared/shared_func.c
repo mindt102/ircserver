@@ -44,7 +44,7 @@ int connect_to_server(char *hostname, int port)
     fcntl(sockfd, F_SETFL, sockfl);
 
     char ip_addr[32];
-    printf("Connected to %s\n", inet_ntop(host_ptr->h_addrtype, host_ptr->h_addr_list[0], ip_addr, sizeof(ip_addr)));
+    printf("Connected to %s:%d\n", inet_ntop(host_ptr->h_addrtype, host_ptr->h_addr_list[0], ip_addr, sizeof(ip_addr)), port);
 
     return sockfd;
 }

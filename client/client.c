@@ -23,7 +23,15 @@ int main(int argc, char **argv)
     int irc_port = IRC_DEFAULT_PORT;
     char irc_host[MAX_LENGTH] = DEFAULT_HOST;
     int enc_port = ENC_DEFAULT_PORT;
-    char enc_host[MAX_LENGTH] = DEFAULT_HOST;
+    char enc_host[MAX_LENGTH];
+    if (getenv("ENC_HOST"))
+    {
+        strncpy(enc_host, getenv("ENC_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(enc_host, "localhost", MAX_LENGTH);
+    }
 
     if (argc > 1)
     {

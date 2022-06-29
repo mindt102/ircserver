@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include "enc.server.h"
 
 #define DEFAULT_PORT 4443
@@ -24,7 +25,9 @@ int main(int argc, char **argv)
         port = atoi(argv[1]);
     }
 
-    int sockfd, clen, clientfd;
+    int sockfd, clientfd;
+    socklen_t clen;
+
     struct sockaddr_in saddr, caddr;
     clen = sizeof(caddr);
 

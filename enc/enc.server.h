@@ -155,7 +155,7 @@ int coprime(int a, int b)
         return 2; // false
 }
 
-char *encrypt(char *raw_message)
+char *encryptFunc(char *raw_message)
 {
     // char *encryp = (char *)malloc(1024); // to store encryp msg
     long int pt1, pt2; // pointer1 , pointer2
@@ -255,7 +255,7 @@ void handle_request(char *request, int senderfd)
         Gen_key();
         char response_message[1024];
         // char *response_message = encrypt(request_message);
-        char *temp = encrypt(request_message);
+        char *temp = encryptFunc(request_message);
         strcpy(response_message, temp);
         printf("Response message: %s, len %ld\n", response_message, strlen(response_message));
         // Create the response payload

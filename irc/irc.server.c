@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include "irc.server.h"
 
 #define MAX_LENGTH 255
@@ -48,16 +49,25 @@ int main(int argc, char **argv)
 
         JsonNode *init_payload = json_mkobject();
         json_append_member(init_payload, "method", json_mkstring("INIT"));
-        char* buffer = json_encode(init_payload);
+        char *buffer = json_encode(init_payload);
         send(remotefd, buffer, strlen(buffer) + 1, 0);
     }
 
-    int sockfd, clen, clientfd;
+    int sockfd, clientfd;
+    socklen_t clen;
     struct sockaddr_in saddr, caddr;
     clen = sizeof(caddr);
-
+    char authHost[MAX_LENGTH];
+    if (getenv("AUTH_HOST"))
+    {
+        strncpy(authHost, getenv("AUTH_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(authHost, "localhost", MAX_LENGTH);
+    }
     // Connect to the authentication server
-    int authfd = connect_to_server("localhost", 4444);
+    int authfd = connect_to_server(authHost, 4444);
     sockfl = fcntl(authfd, F_GETFL, 0);
     sockfl |= O_NONBLOCK;
     fcntl(authfd, F_SETFL, sockfl);
@@ -65,7 +75,16 @@ int main(int argc, char **argv)
     // int authfd = 0;
 
     // Connect to the encryption server
-    int encryptfd = connect_to_server("localhost", 4443);
+    char encHost[MAX_LENGTH];
+    if (getenv("ENC_HOST"))
+    {
+        strncpy(encHost, getenv("ENC_HOST"), MAX_LENGTH);
+    }
+    else
+    {
+        strncpy(encHost, "localhost", MAX_LENGTH);
+    }
+    int encryptfd = connect_to_server(encHost, 4443);
     sockfl = fcntl(encryptfd, F_GETFL, 0);
     sockfl |= O_NONBLOCK;
     fcntl(encryptfd, F_SETFL, sockfl);
