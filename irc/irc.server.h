@@ -14,7 +14,6 @@ void authorize_client(int clientfd, int *clientfds, int *authed_clients)
             authed_clients[i] = 1;
             break;
         }
-        printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
     }
 }
 
@@ -29,8 +28,6 @@ void broadcast(char *message, int *clientfds, int *authed_clients, int encryptfd
     for (int i = 0; i < MAX_CLIENT; i++)
     {
         int clientfd = clientfds[i];
-        // printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
-
         // Send the message if file the descriptor belongs to a valid client
         if (clientfd != 0 && clientfd != encryptfd && clientfd != authfd && clientfd != senderfd && authed_clients[i] == 1)
         {
@@ -159,7 +156,6 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
         json_append_member(request_json, "message", raw_message_json);
 
         // send to the client
-
         char *payload = json_encode(request_json);
         printf("Send to client: %s\n", payload);
         send(receiver, payload, strlen(payload) + 1, 0);
@@ -178,7 +174,7 @@ void server_handler(char *payload, int *clientfds, int *authed_clients, int send
         + UNICAST => Send this message to encryption server to decrypt
     */
 
-    // printf("Received payload from %d: %s", senderfd, payload);
+    printf("Received payload from %d: %s", senderfd, payload);
     JsonNode *received_payload = json_decode(payload);
     char *method = json_find_member(received_payload, "method")->string_;
 
