@@ -23,11 +23,13 @@ services:
       context: .
       dockerfile: irc.Dockerfile
     ports:
-      - 8784:8784
-    depends_on:
-      - auth
-      - enc
+      - 1234:8784
+        #depends_on:
+        #- auth
+        #- enc
     restart: always
+    env_file: irc.env
+       
 
   client:
     container_name: irc_client
