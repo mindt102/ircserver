@@ -14,7 +14,6 @@ void authorize_client(int clientfd, int *clientfds, int *authed_clients)
             authed_clients[i] = 1;
             break;
         }
-        printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
     }
 }
 
@@ -29,8 +28,6 @@ void broadcast(char *message, int *clientfds, int *authed_clients, int encryptfd
     for (int i = 0; i < MAX_CLIENT; i++)
     {
         int clientfd = clientfds[i];
-        // printf("clientfds[%d] = %d, authed_clients[%d] = %d\n", i, clientfds[i], i, authed_clients[i]);
-
         // Send the message if file the descriptor belongs to a valid client
         if (clientfd != 0 && clientfd != encryptfd && clientfd != authfd && clientfd != senderfd && authed_clients[i] == 1)
         {
@@ -81,12 +78,6 @@ void handle_authentication_response(char *payload, int encryptfd, int *clientfds
     request_encryption_server("ENCRYPT", message, encryptfd, receiver);
 }
 
-void handle_unicast_request(char *payload, int encryptfd, int senderfd)
-{
-    // HaTrang TODO: call function to DECRYPT
-    request_encryption_server("DECRYPT", payload, encryptfd, senderfd);
-}
-
 void handle_client_request(char *payload, int authfd, int clientfd)
 {
     /*
@@ -94,10 +85,12 @@ void handle_client_request(char *payload, int authfd, int clientfd)
 
     Incoming payload structure:
     {
+    	"receiver": clientfd,
         "method": method,
         "username": username,
         "password": password
     }
+    - receiver is the client to send the response back to
     - method is either LOGIN or REGISTER
     - username is the username of the client
     - password is the password of the client
@@ -119,7 +112,7 @@ void handle_client_request(char *payload, int authfd, int clientfd)
     json_append_member(request_json, "password", pass_json);
 
     char *request_buffer = json_encode(request_json);
-    printf("Send to auth: %s\n", request_buffer);
+    printf("Sending to auth: %s\n", request_buffer);
     send(authfd, request_buffer, strlen(request_buffer) + 1, 0);
 }
 
@@ -135,6 +128,7 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
     */
 
     // Decode the incoming payload
+    printf("Encryption payload: %s\n", payload);
     JsonNode *payload_json = json_decode(payload);
     int receiver = json_find_member(payload_json, "receiver")->number_;
     char *method = json_find_member(payload_json, "method")->string_;
@@ -159,9 +153,8 @@ void handle_encryption_response(char *payload, int *clientfds, int encryptfd, in
         json_append_member(request_json, "message", raw_message_json);
 
         // send to the client
-
         char *payload = json_encode(request_json);
-        printf("Send to client: %s\n", payload);
+        printf("Sending to client %d: %s\n", receiver, payload);
         send(receiver, payload, strlen(payload) + 1, 0);
     }
 }
@@ -178,7 +171,7 @@ void server_handler(char *payload, int *clientfds, int *authed_clients, int send
         + UNICAST => Send this message to encryption server to decrypt
     */
 
-    // printf("Received payload from %d: %s", senderfd, payload);
+    printf("Received payload from %d: %s", senderfd, payload);
     JsonNode *received_payload = json_decode(payload);
     char *method = json_find_member(received_payload, "method")->string_;
 
@@ -197,14 +190,14 @@ void server_handler(char *payload, int *clientfds, int *authed_clients, int send
         /* Encrypted payload comes from clients */
         if (strcmp(method, "BROADCAST") == 0)
         {
-            printf("Broadcast payload: %s\n", payload);
+            printf("Broadcasting: %s\n", payload);
             broadcast(payload, clientfds, authed_clients, encryptfd, authfd, senderfd);
         }
         else if (strcmp(method, "UNICAST") == 0)
         {
             char *encrypted_message = json_find_member(received_payload, "message")->string_;
-            printf("Encrypted message: %s\n", encrypted_message);
-            handle_unicast_request(encrypted_message, encryptfd, senderfd);
+            printf("UNICAST message: %s\n", encrypted_message);
+	    request_encryption_server("DECRYPT", payload, encryptfd, senderfd);
         }
         else if (strcmp(method, "INIT") == 0)
         {

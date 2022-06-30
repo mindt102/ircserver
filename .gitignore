@@ -2,3 +2,5 @@
 *.server
 .vscode/
 *.db
+irc_client
+migration
