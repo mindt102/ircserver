@@ -197,7 +197,7 @@ void server_handler(char *payload, int *clientfds, int *authed_clients, int send
         {
             char *encrypted_message = json_find_member(received_payload, "message")->string_;
             printf("UNICAST message: %s\n", encrypted_message);
-	    request_encryption_server("DECRYPT", payload, encryptfd, senderfd);
+	    request_encryption_server("DECRYPT", encrypted_message, encryptfd, senderfd);
         }
         else if (strcmp(method, "INIT") == 0)
         {
